@@ -1,5 +1,6 @@
 package com.luxof.configucast;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -7,9 +8,12 @@ import static com.luxof.configucast.Configucast.LOGGER;
 import static com.luxof.configucast.Configucast.MOD_ID;
 import static com.luxof.configucast.Configucast.id;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
@@ -20,14 +24,16 @@ import net.minecraft.util.Identifier;
 
 public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloadListener {
 
-    public static Map<Identifier, Identifier> gates = new HashMap<>();
+    public static final Map<Identifier, Identifier> playerGates = new HashMap<>();
+    public static final Set<Identifier> playerlessDisallowed = new HashSet<>();
+    public static final Map<Identifier, List<String>>
 
     public static final Identifier ID = id("datapack_loader");
     @Override public Identifier getFabricId() { return ID; }
 
     @Override
     public void reload(ResourceManager manager) {
-        gates.clear();
+        playerGates.clear();
 
         Map<Identifier, Resource> resources = manager.findResources(
             "configucast.json",
@@ -39,23 +45,28 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
         );
 
         for (Identifier path : resources.keySet()) {
+            LOGGER.info("Configucast loading: " + path.getNamespace());
             Resource resource = resources.get(path);
 
             try {
+
                 JsonObject file = JsonParser.parseReader(resource.getReader()).getAsJsonObject();
 
-                // for FUCK'S sake i can't add a throws clause to it
-                /*loadGates(file.getAsJsonObject("gates")).forEach(
+                JsonObject playerGatesJsonObject = file.has("playergates")
+                    ? file.getAsJsonObject("playergates")
+                    : new JsonObject();
+                var jsonPlayerGates = loadPlayerGates(playerGatesJsonObject);
+                jsonPlayerGates.forEach(
                     (action, advancement) -> {
-                        if (gates.containsKey(action)) throw new Exception(String.format("%s is already gated to another advancement (%s) by another datapack!", action.toString(), gates.get(action).toString()));
+                        if (playerGates.containsKey(action)) throw new RuntimeException(String.format("%s is already gated to another advancement (%s) by another datapack!", action.toString(), playerGates.get(action).toString()));
                     }
-                );*/
-                for (Entry<Identifier, Identifier> entry : loadGates(file.getAsJsonObject("gates")).entrySet()) {
-                    Identifier action = entry.getKey();
-                    Identifier advancement = entry.getValue();
-                    if (gates.containsKey(action)) throw new Exception(String.format("%s is already gated to another advancement (%s) by another datapack!", action.toString(), gates.get(action).toString()));
-                    gates.put(action, advancement);
-                }
+                );
+                playerGates.putAll(jsonPlayerGates);
+
+                JsonArray playerlessGatesJsonArray = file.has("playerlessgates")
+                    ? file.getAsJsonArray("playerlessgates")
+                    : new JsonArray();
+                playerlessDisallowed.addAll(loadPlayerlessGates(playerlessGatesJsonArray));
 
             } catch (Exception e) {
                 LOGGER.error(
@@ -70,12 +81,18 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
 
     }
 
-    public Map<Identifier, Identifier> loadGates(JsonObject json) {
-        Map<Identifier, Identifier> gates = new HashMap<>();
-        json.keySet().forEach(key -> gates.put(
+    public Map<Identifier, Identifier> loadPlayerGates(JsonObject json) {
+        Map<Identifier, Identifier> playerGates = new HashMap<>();
+        json.keySet().forEach(key -> playerGates.put(
             new Identifier(key), new Identifier(json.get(key).getAsString())
         ));
-        return gates;
+        return playerGates;
+    }
+
+    public List<Identifier> loadPlayerlessGates(JsonArray json) {
+        List<Identifier> playerlessGates = new ArrayList<>();
+        json.forEach(key -> playerlessGates.add(new Identifier(key.getAsString())));
+        return playerlessGates;
     }
 
 }
