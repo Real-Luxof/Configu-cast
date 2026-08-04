@@ -26,7 +26,6 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
 
     public static final Map<Identifier, Identifier> playerGates = new HashMap<>();
     public static final Set<Identifier> playerlessDisallowed = new HashSet<>();
-    public static final Map<Identifier, List<String>>
 
     public static final Identifier ID = id("datapack_loader");
     @Override public Identifier getFabricId() { return ID; }
@@ -61,11 +60,18 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
                         if (playerGates.containsKey(action)) throw new RuntimeException(String.format("%s is already gated to another advancement (%s) by another datapack!", action.toString(), playerGates.get(action).toString()));
                     }
                 );
-                playerGates.putAll(jsonPlayerGates);
 
                 JsonArray playerlessGatesJsonArray = file.has("playerlessgates")
                     ? file.getAsJsonArray("playerlessgates")
                     : new JsonArray();
+
+                JsonObject costsJsonObject = file.has("costs")
+                    ? file.getAsJsonObject("costs")
+                    : new JsonObject();
+                MethInterpreter.loadMathJson(costsJsonObject);
+
+                // commit after conflict-catching is done
+                playerGates.putAll(jsonPlayerGates);
                 playerlessDisallowed.addAll(loadPlayerlessGates(playerlessGatesJsonArray));
 
             } catch (Exception e) {
