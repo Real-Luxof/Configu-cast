@@ -1,0 +1,13 @@
+{
+    "playergates": {
+        "hexcasting:break_block": "hexcasting:opened_eyes"
+    },
+
+    "playerlessgates": [
+        "hexcasting:break_block"
+    ],
+
+    "costs": {
+        "hexcasting:add_motion": "len($1) / 2 + $image.impulsed[$0.uuid] * -1"
+    }
+}
