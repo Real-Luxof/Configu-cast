@@ -68,7 +68,7 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
                 JsonObject costsJsonObject = file.has("costs")
                     ? file.getAsJsonObject("costs")
                     : new JsonObject();
-                MethInterpreter.loadMathJson(costsJsonObject);
+                MethInterpreter.loadMathEquationsFromJson(costsJsonObject);
 
                 // commit after conflict-catching is done
                 playerGates.putAll(jsonPlayerGates);

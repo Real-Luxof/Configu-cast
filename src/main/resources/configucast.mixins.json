@@ -3,7 +3,8 @@
 	"package": "com.luxof.configucast.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"CastingEnvironmentMixin"
+		"CastingEnvironmentMixin",
+		"CastingVMMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

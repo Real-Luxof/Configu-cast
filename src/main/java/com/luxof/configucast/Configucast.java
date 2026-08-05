@@ -21,8 +21,6 @@ public class Configucast implements ModInitializer {
 		ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(
 			new ConfigucastDatapackLoader()
 		);
-
-		CastEnvActionFucker.init();
 	}
 
 	public static Identifier id(String name) { return new Identifier(MOD_ID, name); }
