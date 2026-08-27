@@ -1,0 +1,7 @@
+- `(random() < 0.5 ? sin : cos)($caster.pos.x)`
+    - you know what this means
+    - for this, you have to allow unknown words (subnautica 2 reference) as tokens in the regex
+    - and then check those tokens against functions to allow them
+    - then error out if right after the enclosing paren isn't another paren
+    - the second paren will be function arguments in the bytecode
+    - after paren2, verify all functions in paren1 match that number of arguments

@@ -8,8 +8,8 @@
     ],
 
     "costs": {
-        "hexcasting:add_motion": "len($1) / 2 + $image.impulsed[$0.uuid] * -1",
-        "hexcasting:break_block": "$rand * 5",
+        "hexcasting:add_motion": "len($0) / 2 + (exists($userData, \"impulsed\") ? $userData[\"impulsed\"][$1.uuid] * -1 : 0 :)",
+        "hexcasting:break_block": "random(5)",
         "hexcasting:place_block": "sin($caster.pos.x % 1)"
     }
 }

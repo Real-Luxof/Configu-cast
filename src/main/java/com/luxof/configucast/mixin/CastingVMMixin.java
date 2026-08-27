@@ -15,7 +15,10 @@ import at.petrak.hexcasting.common.casting.PatternRegistryManifest;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 
+import com.luxof.configucast.MathException;
 import com.luxof.configucast.MethInterpreter;
+
+import static com.luxof.configucast.Configucast.LOGGER;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,11 +50,11 @@ public abstract class CastingVMMixin {
         ),
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    public void configucast$calculateMediaCostAheadOfTime(
+    public void configucast$calculateMediaCost(
         List<? extends Iota> iotas,
         ServerWorld world,
         CallbackInfoReturnable<ExecutionClientView> cir,
-        @Local LocalRef<CastResult> resultRef
+        @Local(name = "result") LocalRef<CastResult> resultRef
     ) {
         CastResult result = resultRef.get();
         CastingEnvironment env = getEnv();
@@ -76,9 +79,13 @@ public abstract class CastingVMMixin {
             else
                 sideEffects.add(sideEffect);
         }
-        sideEffects.add(new OperatorSideEffect.ConsumeMedia(
-            MethInterpreter.interpretMath(formula, originalAmount, env, img)
-        ));
+        try {
+            sideEffects.add(new OperatorSideEffect.ConsumeMedia(
+                MethInterpreter.interpretMath(formula, originalAmount, env, img)
+            ));
+        } catch (MathException me) {
+            LOGGER.error("Encountered a MathException!", me);
+        }
         resultRef.set(result.copy(
             result.getCast(),
             result.getContinuation(),
@@ -89,7 +96,7 @@ public abstract class CastingVMMixin {
         ));
     }
 
-    public static Identifier getId(PatternShapeMatch psm) {
+    private static Identifier getId(PatternShapeMatch psm) {
 		if (psm instanceof PatternShapeMatch.Normal n) return n.key.getValue();
 		else if (psm instanceof PatternShapeMatch.PerWorld pw) return pw.key.getValue();
 		else if (psm instanceof PatternShapeMatch.Special s) return s.key.getValue();
