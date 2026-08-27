@@ -59,12 +59,16 @@ public class MethInterpreter {
         public Object getValue();
         public String strRepr();
     }
-    private final static class NumberEP implements EquationPart {
+    private sealed static class NumberEP implements EquationPart permits DefaultEP {
         public double value;
         public NumberEP(double value) { this.value = value; }
         @Override public Object getValue() { return value; }
         @Override public String strRepr() { return String.valueOf(value); }
         public boolean truthy() { return !tolerates(value, 0); }
+    }
+    /** only produced when indexing NBT fails. consumes indexing. */
+    private final static class DefaultEP extends NumberEP {
+        public DefaultEP() { super(0); }
     }
     private final static class VariableEP implements EquationPart {
         public String[] variable;
@@ -152,8 +156,6 @@ public class MethInterpreter {
             Map.entry("len", new Pair<>(1, 2)),
             Map.entry("lenSqr", new Pair<>(1, 2)),
             Map.entry("hadamard", new Pair<>(2, 3)),
-
-            Map.entry("exists", new Pair<>(2, 3)),
 
             Map.entry("num", new Pair<>(1, 2)),
             Map.entry("str", new Pair<>(1, 2)),
@@ -264,7 +266,7 @@ public class MethInterpreter {
         }
         public EquationPart get(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
             List<EquationPart> terms = interpretMathInner(this.nested, og, env, img, variables);
-            if (terms.size() > 1) throw new MathException("Error interpreting math equation in function processing: a function argument returned more than one term!");
+            if (terms.size() > 1) throw new MathException("Error interpreting math equation in function %s: a function argument returned more than one term!", fn);
             return terms.get(0);
         }
         public double getNum(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
@@ -528,8 +530,6 @@ public class MethInterpreter {
             case "lenSqr" -> args.get(0).getVec(fn, originalAmount, env, img).lengthSquared();
             case "axial" -> Vec3d.of(getFacing(args.get(0).getVec(fn, originalAmount, env, img)).getVector());
             case "hadamard" -> args.get(0).getVec(fn, originalAmount, env, img).multiply(args.get(1).getVec(fn, originalAmount, env, img));
-
-            case "exists" -> args.get(0).getNBT(fn, originalAmount, env, img).contains(args.get(1).getStr(fn, originalAmount, env, img));
 
             case "num" -> getDoubleOutOf(args.get(0).get(fn, originalAmount, env, img));
             case "str" -> args.get(0).get(fn, originalAmount, env, img).getValue().toString();
@@ -905,7 +905,12 @@ public class MethInterpreter {
                 if (currEp instanceof NBTEP nbt) {
                     if (!(index instanceof StringEP string)) throw new MathException("Error while interpreting math equation in indexing NBT: NBT may only be accessed by strings, not numbers.");
                     NbtElement element = nbt.nbt.get(string.value);
-                    if (element == null) continue;
+                    equation.remove(i + 1);
+
+                    if (element == null) {
+                        equation.set(i, new DefaultEP());
+                        continue;
+                    }
                     equation.set(
                         i,
                         switch (element.getType()) {
@@ -915,7 +920,6 @@ public class MethInterpreter {
                             default -> throw new MathException("Error while interpreting math equation in indexing NBT: returned a type the interpreter does not support (not more NBT, a number, or a string).");
                         }
                     );
-                    equation.remove(i + 1);
 
                 } else if (currEp instanceof StringEP string) {
                     if (
@@ -933,6 +937,8 @@ public class MethInterpreter {
                     );
                     equation.remove(i + 1);
 
+                } else if (currEp instanceof DefaultEP) {
+                    equation.remove(i + 1);
                 }
             }
         }
@@ -1069,7 +1075,7 @@ public class MethInterpreter {
                     equation.remove(i + colon1);
                 }
             } else {
-                for (int I = 0; I < colon1; I++) {
+                for (int I = 0; I <= colon1; I++) {
                     equation.remove(i);
                 }
             }
@@ -1135,7 +1141,7 @@ public class MethInterpreter {
             if (result != null) {
                 equation.set(i, result);
                 equation.remove(i + 1);
-                equation.remove(i + 2);
+                equation.remove(i + 1);
             }
         }
     }
