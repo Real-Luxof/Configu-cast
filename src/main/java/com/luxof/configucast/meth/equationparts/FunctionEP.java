@@ -2,6 +2,7 @@ package com.luxof.configucast.meth.equationparts;
 
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.iota.IotaType;
 
 import com.luxof.configucast.meth.MathException;
 
@@ -71,6 +72,7 @@ public final class FunctionEP implements EquationPart {
         Map.entry("num", new Pair<>(1, 2)),
         Map.entry("str", new Pair<>(1, 2)),
         Map.entry("vec", new Pair<>(3, 4)),
+        Map.entry("iota", new Pair<>(1, 2)),
 
         Map.entry("loop", new Pair<>(5, 6))
     );
@@ -123,15 +125,18 @@ public final class FunctionEP implements EquationPart {
             case "axial" -> Vec3d.of(getFacing(args.get(0).getVec(fn, originalAmount, env, img)).getVector());
             case "hadamard" -> args.get(0).getVec(fn, originalAmount, env, img).multiply(args.get(1).getVec(fn, originalAmount, env, img));
 
-            case "num" -> getDoubleOutOf(args.get(0).get(fn, originalAmount, env, img));
+            case "num" -> getDoubleOutOf(args.get(0).getStr(fn, originalAmount, env, img));
             case "str" -> args.get(0).get(fn, originalAmount, env, img).getValue().toString();
             case "vec" -> new Vec3d(
                 args.get(0).getNum(fn, originalAmount, env, img),
                 args.get(1).getNum(fn, originalAmount, env, img),
                 args.get(2).getNum(fn, originalAmount, env, img)
             );
+            case "iota" -> VariableEP.deIotaThisIotaIfPossible(IotaType.deserialize(
+                args.get(0).getNBT(fn, originalAmount, env, img),
+                env.getWorld()
+            ));
 
-            // TODO: DOCUMENT THIS (IN CASE I FORGET): the "loop" function is like creating an iterator and then using reduce() on it.
             case "loop" -> loopFn(
                 args.get(0).get(fn, originalAmount, env, img),
                 args.get(1),
@@ -153,20 +158,20 @@ public final class FunctionEP implements EquationPart {
             : data instanceof String string ? new StringEP(string)
             : data instanceof Boolean bool ? new NumberEP(bool ? 1 : 0)
             : data instanceof EquationPart ep ? ep
-            : new MathException("Oops! Big fucky wucky, a wittle fucko boingo. Function returned an unsupported type! Contact Luxof: " + data.getClass().toString());
+            : (fn.equals("iota")
+                ? new MathException("Error interpreting math equation in function processing: \"iota\" returned an unsupported type: " + data.getClass().toString())
+                : new MathException("Oops! Big fucky wucky, a wittle fucko boingo. Function returned an unsupported type! Contact Luxof: " + data.getClass().toString()));
         if (data instanceof RuntimeException e) throw e;
         return (EquationPart)data;
     }
     private static Direction getFacing(Vec3d vec) {
         return Direction.getFacing(vec.x, vec.y, vec.z);
     }
-    private static double getDoubleOutOf(EquationPart ep) {
-        if (ep instanceof NumberEP numEp) return numEp.value;
-        if (!(ep instanceof StringEP stringEp)) throw new MathException("Error interpreting math equation in function processing: \"num\" requires either a number or a string as input!");
+    private static double getDoubleOutOf(String str) {
         try {
-            return Double.parseDouble(stringEp.value);
+            return Double.parseDouble(str);
         } catch (NumberFormatException e) {
-            throw new MathException("Error interpreting math equation in function processing: \"num\" requires a string that may be a valid number, but was provided \"" + stringEp.value + "\"!");
+            throw new MathException("Error interpreting math equation in function processing: \"num\" requires a string that may be a valid number, but was provided \"" + str + "\"!");
         }
     }
     private static EquationPart loopFn(

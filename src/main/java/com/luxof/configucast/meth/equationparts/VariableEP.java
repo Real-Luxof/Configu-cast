@@ -208,7 +208,8 @@ public final class VariableEP implements EquationPart {
         if (data instanceof RuntimeException e) throw e;
         return (EquationPart)data;
     }
-    private static Object deIotaThisIotaIfPossible(Object data) {
+    /** Turns an Iota or EquationPart into its underlying value. */
+    public static Object deIotaThisIotaIfPossible(Object data) {
         return data instanceof EquationPart ep
             ? (ep instanceof NumberEP numEp ? numEp.value
             : ep instanceof StringEP stringEp ? stringEp.value
