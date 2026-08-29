@@ -1,9 +1,5 @@
 # Configu-cast
+An addon mod for the Minecraft mod [Hex Casting](https://modrinth.com/mod/hex-casting).  
+Allows you to configure the spells in your modpack's costs, what advancements a player requires to cast them, and whether they are banned in casting environments with no players available (e.g. unbounded Cleric Impeti).  
 
-## Setup
-
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
-
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+Read about how to use it on its wiki [here](https://github.com/Real-Luxof/Configu-cast/wiki)!
