@@ -18,6 +18,7 @@ import static com.luxof.configucast.Configucast.LOGGER;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 
 import org.spongepowered.asm.mixin.Mixin;

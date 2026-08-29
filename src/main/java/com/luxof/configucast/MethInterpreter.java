@@ -30,6 +30,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.AbstractNbtNumber;
+import net.minecraft.nbt.NbtByte;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtString;
@@ -51,7 +52,6 @@ public class MethInterpreter {
             acc += ep.strRepr() + " ";
         }
         LOGGER.info(acc);
-        LOGGER.info("");
     }
 
 
@@ -255,15 +255,15 @@ public class MethInterpreter {
         public double getNum(String fn, long og, CastingEnvironment env, CastingImage img) {
             return this.getNum(fn, og, env, img, Map.of());
         }
-        public String getStr(String fn, long og, CastingEnvironment env, CastingImage img) {
+        /*public String getStr(String fn, long og, CastingEnvironment env, CastingImage img) {
             return this.getStr(fn, og, env, img, Map.of());
-        }
+        }*/
         public Vec3d getVec(String fn, long og, CastingEnvironment env, CastingImage img) {
             return this.getVec(fn, og, env, img, Map.of());
         }
-        public NbtCompound getNBT(String fn, long og, CastingEnvironment env, CastingImage img) {
+        /*public NbtCompound getNBT(String fn, long og, CastingEnvironment env, CastingImage img) {
             return this.getNBT(fn, og, env, img, Map.of());
-        }
+        }*/
         public EquationPart get(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
             List<EquationPart> terms = interpretMathInner(this.nested, og, env, img, variables);
             if (terms.size() > 1) throw new MathException("Error interpreting math equation in function %s: a function argument returned more than one term!", fn);
@@ -273,18 +273,18 @@ public class MethInterpreter {
             if (!(get(fn, og, env, img, variables) instanceof NumberEP term)) throw new MathException("Error interpreting math equation in function %s: expected a number!", fn);
             return term.value;
         }
-        public String getStr(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
+        /*public String getStr(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
             if (!(get(fn, og, env, img, variables) instanceof StringEP term)) throw new MathException("Error interpreting math equation in function %s: expected a string!", fn);
             return term.value;
-        }
+        }*/
         public Vec3d getVec(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
             if (!(get(fn, og, env, img, variables) instanceof VecEP term)) throw new MathException("Error interpreting math equation in function %s: expected a vector!", fn);
             return term.value;
         }
-        public NbtCompound getNBT(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
+        /*public NbtCompound getNBT(String fn, long og, CastingEnvironment env, CastingImage img, Map<String, Object> variables) {
             if (!(get(fn, og, env, img, variables) instanceof NBTEP term)) throw new MathException("Error interpreting math equation in function %s: expected NBT!", fn);
             return term.nbt;
-        }
+        }*/
         @Override public String strRepr() { return "COMMA"; }
     }
     private static final class FunctionArgumentsEndEP implements EquationPart {
@@ -890,16 +890,18 @@ public class MethInterpreter {
             EquationPart currEp = equation.get(i);
             EquationPart nextEp = equation.get(i + 1);
 
-            if (nextEp instanceof OperatorEP op && op == OperatorEP.EXP) {
+            while (nextEp instanceof OperatorEP op && op == OperatorEP.EXP) {
                 if (i < equation.size() - 2) continue;
                 EquationPart expon = equation.get(i + 2);
                 if (!(currEp instanceof NumberEP num1) || !(expon instanceof NumberEP num2)) continue;
                 equation.remove(i + 1);
-                equation.remove(i + 2);
+                equation.remove(i + 1);
                 equation.set(i, new NumberEP(Math.pow(num1.value, num2.value)));
+                nextEp = i + 1 < equation.size() ? equation.get(i) : null;
+            }
 
-            // thankfully nothing that supports exponentiation is indexable via square brackets
-            } else if (nextEp instanceof SquareBracketNEP squareBrackets) {
+            while (nextEp instanceof SquareBracketNEP squareBrackets) {
+                currEp = equation.get(i);
                 EquationPart index = squareBrackets.nested.get(0);
 
                 if (currEp instanceof NBTEP nbt) {
@@ -907,17 +909,15 @@ public class MethInterpreter {
                     NbtElement element = nbt.nbt.get(string.value);
                     equation.remove(i + 1);
 
-                    if (element == null) {
-                        equation.set(i, new DefaultEP());
-                        continue;
-                    }
                     equation.set(
                         i,
-                        switch (element.getType()) {
+                        element == null ? new DefaultEP()
+                        : switch (element.getType()) {
                             case NbtElement.COMPOUND_TYPE -> new NBTEP((NbtCompound)element);
                             case NbtElement.NUMBER_TYPE -> new NumberEP(((AbstractNbtNumber)element).doubleValue());
+                            case NbtElement.BYTE_TYPE -> new NumberEP(((NbtByte)element).doubleValue());
                             case NbtElement.STRING_TYPE -> new StringEP(((NbtString)element).asString());
-                            default -> throw new MathException("Error while interpreting math equation in indexing NBT: returned a type the interpreter does not support (not more NBT, a number, or a string).");
+                            default -> throw new MathException("Error while interpreting math equation in indexing NBT: returned a type the interpreter does not support (expected NBT, a number, or a string).");
                         }
                     );
 
@@ -937,9 +937,10 @@ public class MethInterpreter {
                     );
                     equation.remove(i + 1);
 
-                } else if (currEp instanceof DefaultEP) {
-                    equation.remove(i + 1);
-                }
+                } else if (currEp instanceof DefaultEP) equation.remove(i + 1);
+                else break;
+
+                nextEp = i + 1 < equation.size() ? equation.get(i + 1) : null;
             }
         }
 
@@ -1042,7 +1043,9 @@ public class MethInterpreter {
 
         print(equation);
         if (equation.size() == 1) return;
-        for (int i = 0; i < equation.size() - 1; i++) {
+        int inc = 0;
+        for (int i = 0; i < equation.size() - 1; i += inc) {
+            inc = 1;
             EquationPart here = equation.get(i);
             EquationPart next = equation.get(i + 1);
             if (!(
@@ -1079,6 +1082,7 @@ public class MethInterpreter {
                     equation.remove(i);
                 }
             }
+            inc = 0;
         }
         print(equation);
     }
@@ -1127,7 +1131,9 @@ public class MethInterpreter {
         int upperBoundOnOperator,
         TriFunction<EquationPart, OperatorEP, EquationPart, EquationPart> operator
     ) {
-        for (int i = 0; i < equation.size() - 2; i++) {
+        int inc = 0;
+        for (int i = 0; i < equation.size() - 2; i += inc) {
+            inc = 1;
             EquationPart currEp = equation.get(i);
             EquationPart nextEp = equation.get(i + 1);
             EquationPart secoEp = equation.get(i + 2);
@@ -1135,7 +1141,8 @@ public class MethInterpreter {
             if (!(
                 nextEp instanceof OperatorEP op &&
                 op.ordinal() >= lowerBoundOnOperator && op.ordinal() <= upperBoundOnOperator
-            )) continue;
+            ))
+                continue;
 
             EquationPart result = operator.apply(currEp, op, secoEp);
             if (result != null) {
@@ -1143,6 +1150,7 @@ public class MethInterpreter {
                 equation.remove(i + 1);
                 equation.remove(i + 1);
             }
+            inc = 0; // incase the next "nextEp" is an eligible operator
         }
     }
 
@@ -1154,6 +1162,8 @@ public class MethInterpreter {
         EquationPart first = currEp instanceof NumberEP ? currEp : secoEp;
         EquationPart secon = currEp instanceof NumberEP ? secoEp : currEp;
         if (first instanceof NumberEP num1) {
+            if (secon instanceof NumberEP num2)
+                return new NumberEP(num1.value * num2.value);
             if (secon instanceof StringEP str2)
                 return new StringEP(multiplyString(str2.value, num1.value));
             else if (secon instanceof VecEP vec2)
