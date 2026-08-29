@@ -1,4 +1,4 @@
-package com.luxof.configucast;
+package com.luxof.configucast.meth;
 
 public class MathException extends RuntimeException {
     public MathException(String msg, Object... args) {

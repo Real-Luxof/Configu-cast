@@ -4,6 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import com.luxof.configucast.meth.EquationParser;
+
 import static com.luxof.configucast.Configucast.LOGGER;
 import static com.luxof.configucast.Configucast.MOD_ID;
 import static com.luxof.configucast.Configucast.id;
@@ -68,7 +70,9 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
                 JsonObject costsJsonObject = file.has("costs")
                     ? file.getAsJsonObject("costs")
                     : new JsonObject();
-                MethInterpreter.loadMathEquationsFromJson(costsJsonObject);
+                EquationParser.costFormulae.putAll(
+                    EquationParser.loadMathEquationsFromJson(costsJsonObject)
+                );
 
                 // commit after conflict-catching is done
                 playerGates.putAll(jsonPlayerGates);

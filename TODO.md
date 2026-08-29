@@ -5,3 +5,4 @@
     - then error out if right after the enclosing paren isn't another paren
     - the second paren will be function arguments in the bytecode
     - after paren2, verify all functions in paren1 match that number of arguments
+- add list support

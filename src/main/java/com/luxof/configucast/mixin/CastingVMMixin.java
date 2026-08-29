@@ -10,15 +10,15 @@ import at.petrak.hexcasting.api.casting.eval.vm.CastingVM;
 import at.petrak.hexcasting.api.casting.iota.PatternIota;
 import at.petrak.hexcasting.common.casting.PatternRegistryManifest;
 
-import com.luxof.configucast.MathException;
-import com.luxof.configucast.MethInterpreter;
+import com.luxof.configucast.meth.EquationParser;
+import com.luxof.configucast.meth.MathException;
+import com.luxof.configucast.meth.MethInterpreter;
 
 import static com.luxof.configucast.Configucast.LOGGER;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,11 +51,15 @@ public abstract class CastingVMMixin {
             !(result.getCast() instanceof PatternIota)
         ) return result;
 
-        var formula = MethInterpreter.getMathFormulaFor(getId(PatternRegistryManifest.matchPattern(
-            ((PatternIota)result.getCast()).getPattern(),
-            env,
-            false
-        )));
+        var formula = EquationParser.getMathFormulaFor(
+            getId(
+                PatternRegistryManifest.matchPattern(
+                    ((PatternIota)result.getCast()).getPattern(),
+                    env,
+                    false
+                )
+            )
+        );
         if (formula == null) return result;
 
         long originalAmount = 0;
@@ -69,7 +73,7 @@ public abstract class CastingVMMixin {
 
         try {
             sideEffects.add(new OperatorSideEffect.ConsumeMedia(
-                MethInterpreter.interpretMath(formula, originalAmount, env, img)
+                MethInterpreter.simplifyToNum(formula, originalAmount, env, img)
             ));
         } catch (MathException me) {
             LOGGER.error("Encountered a MathException!", me);
