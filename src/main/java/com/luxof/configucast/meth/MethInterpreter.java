@@ -109,6 +109,7 @@ public class MethInterpreter {
                 equation.remove(i + 1);
                 equation.remove(i + 1);
                 equation.set(i, new NumberEP(Math.pow(num1.value, num2.value)));
+                currEp = equation.get(i);
                 nextEp = i + 1 < equation.size() ? equation.get(i) : null;
             }
 
@@ -137,7 +138,6 @@ public class MethInterpreter {
                     if (
                         !(index instanceof NumberEP num1) ||
                         !isInteger(num1.value) ||
-                        // TODO: DON'T FORGET TO DOCUMENT THIS EVIL BULLSHIT
                         squareBrackets.nested.size() != 2 ||
                         !(squareBrackets.nested.get(1) instanceof NumberEP num2) ||
                         !isInteger(num2.value)

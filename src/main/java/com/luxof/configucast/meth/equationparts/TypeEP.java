@@ -4,15 +4,16 @@ public enum TypeEP implements EquationPart {
     NUMBER,
     STRING,
     VECTOR,
-    NBT;
+    NBT,
+    TYPE;
 
     public static TypeEP of(String type) {
-        // TODO: document type names
         String lower = type.toLowerCase();
         if ("number".startsWith(lower)) return NUMBER;
         else if ("string".startsWith(lower)) return STRING;
         else if ("vector".startsWith(lower)) return VECTOR;
         else if ("nbt".startsWith(lower)) return NBT;
+        else if ("type".startsWith(lower)) return TYPE;
         else return null;
     }
 
@@ -22,6 +23,7 @@ public enum TypeEP implements EquationPart {
             case STRING -> ep instanceof StringEP;
             case VECTOR -> ep instanceof VecEP;
             case NBT -> ep instanceof NBTEP;
+            case TYPE -> ep instanceof TypeEP;
         };
     }
 

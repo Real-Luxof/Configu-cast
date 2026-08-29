@@ -55,8 +55,7 @@ public abstract class CastingVMMixin {
             getId(
                 PatternRegistryManifest.matchPattern(
                     ((PatternIota)result.getCast()).getPattern(),
-                    env,
-                    false
+                    env
                 )
             )
         );

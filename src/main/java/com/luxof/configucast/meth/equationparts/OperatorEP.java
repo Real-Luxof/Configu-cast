@@ -81,7 +81,6 @@ public enum OperatorEP implements EquationPart {
         for (int i = 0; i < Math.floor(times); i++) {
             newStr += string;
         }
-        // TODO: DON'T FORGET TO DOCUMENT THIS WEIRD STRING PROCESSING AS WELL
         newStr = newStr + string.substring(0, (int)Math.floor(string.length() * times % 1));
         return newStr;
     }

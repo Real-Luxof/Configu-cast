@@ -75,7 +75,7 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
                     EquationParser.loadMathEquationsFromJson(costsJsonObject)
                 );
 
-                // commit after conflict-catching is done
+                // commit after equation error-catching is done
                 playerGates.putAll(jsonPlayerGates);
                 playerlessDisallowed.addAll(loadPlayerlessGates(playerlessGatesJsonArray));
 

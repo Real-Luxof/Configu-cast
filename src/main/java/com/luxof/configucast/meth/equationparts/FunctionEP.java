@@ -41,7 +41,7 @@ public final class FunctionEP implements EquationPart {
         Map.entry("sin", new Pair<>(1, 2)),
         Map.entry("sinh", new Pair<>(1, 2)),
         Map.entry("arcsin", new Pair<>(1, 2)),
-        
+
         Map.entry("cos", new Pair<>(1, 2)),
         Map.entry("cosh", new Pair<>(1, 2)),
         Map.entry("arccos", new Pair<>(1, 2)),
@@ -209,7 +209,7 @@ public final class FunctionEP implements EquationPart {
             variables.put("arg0", accumulator);
             for (
                 int windowIndex = windowStart + 1;
-                windowIndex < windowStart + windowSize;
+                windowIndex < windowStart + windowSize && windowIndex < allOs.size();
                 windowIndex++
             ) {
                 variables.put("arg" + String.valueOf(windowIndex), allOs.get(windowIndex));
