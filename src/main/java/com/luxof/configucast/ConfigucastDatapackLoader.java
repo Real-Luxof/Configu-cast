@@ -70,6 +70,7 @@ public class ConfigucastDatapackLoader implements SimpleSynchronousResourceReloa
                 JsonObject costsJsonObject = file.has("costs")
                     ? file.getAsJsonObject("costs")
                     : new JsonObject();
+                EquationParser.costFormulae.clear();
                 EquationParser.costFormulae.putAll(
                     EquationParser.loadMathEquationsFromJson(costsJsonObject)
                 );
