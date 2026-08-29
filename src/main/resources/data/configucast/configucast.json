@@ -8,7 +8,7 @@
     ],
 
     "costs": {
-        "hexcasting:add_motion": "len($0) / 2 ($userData[\"impulsed\"][$1.uuid] ? + * -0.5 : :)",
+        "hexcasting:add_motion": "len($0) / 2 + $userData[\"impulsed\"][$1.uuid] * -0.5",
         "hexcasting:break_block": "random(5)",
         "hexcasting:place_block": "sin($caster.pos.x % 1)"
     }
