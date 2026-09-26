@@ -10,6 +10,7 @@ import at.petrak.hexcasting.api.casting.eval.vm.CastingVM;
 import at.petrak.hexcasting.api.casting.iota.PatternIota;
 import at.petrak.hexcasting.common.casting.PatternRegistryManifest;
 
+import com.luxof.configucast.advancements.ConfigucastAdvancementTriggers;
 import com.luxof.configucast.meth.EquationParser;
 import com.luxof.configucast.meth.MathException;
 import com.luxof.configucast.meth.MethInterpreter;
@@ -19,6 +20,7 @@ import static com.luxof.configucast.Configucast.LOGGER;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,15 +53,30 @@ public abstract class CastingVMMixin {
             !(result.getCast() instanceof PatternIota)
         ) return result;
 
-        var formula = EquationParser.getMathFormulaFor(
-            getId(
-                PatternRegistryManifest.matchPattern(
-                    ((PatternIota)result.getCast()).getPattern(),
-                    env
-                )
+        Identifier patternId = getId(
+            PatternRegistryManifest.matchPattern(
+                ((PatternIota)result.getCast()).getPattern(),
+                env
             )
         );
-        if (formula == null) return result;
+
+        var formula = EquationParser.getMathFormulaFor(patternId);
+        if (formula == null) {
+            doAdvancementGating(
+                env,
+                patternId,
+                result.getSideEffects().stream().reduce(
+                    0L,
+                    (l1, sideEffect2) -> {
+                        return l1 + (sideEffect2 instanceof OperatorSideEffect.ConsumeMedia cm2
+                                ? cm2.getAmount() : 0L);
+                    },
+                    (l1, l2) -> l1 + l2
+                ),
+                img
+            );
+            return result;
+        }
 
         long originalAmount = 0;
         List<OperatorSideEffect> sideEffects = new ArrayList<>();
@@ -70,15 +87,17 @@ public abstract class CastingVMMixin {
                 sideEffects.add(sideEffect);
         }
 
+        long newCost = 0;
         try {
-            sideEffects.add(new OperatorSideEffect.ConsumeMedia(
-                MethInterpreter.simplifyToNum(formula, originalAmount, env, img)
-            ));
+            newCost = MethInterpreter.simplifyToNum(formula, originalAmount, env, img);
+            sideEffects.add(new OperatorSideEffect.ConsumeMedia(newCost));
         } catch (MathException me) {
             LOGGER.error("Encountered a MathException!", me);
         } catch (Exception e) {
             LOGGER.error("Whoops! Error found (likely a bug in Configu-cast)!", e);
         }
+
+        doAdvancementGating(env, patternId, newCost, img);
 
         return result.copy(
             result.getCast(),
@@ -88,6 +107,27 @@ public abstract class CastingVMMixin {
             result.getResolutionType(),
             result.getSound()
         );
+    }
+
+    private static void doAdvancementGating(
+        CastingEnvironment env,
+        Identifier patternId,
+        long patternCost,
+        CastingImage img
+    ) {
+        if (env.getCastingEntity() instanceof ServerPlayerEntity player) {
+            ConfigucastAdvancementTriggers.PATTERN_CASTED.trigger(
+                player,
+                patternId.toString()
+            );
+            ConfigucastAdvancementTriggers.PATTERN_CASTED_WITH_FUNNY_METH_INTERPRETER.trigger(
+                player,
+                patternId.toString(),
+                patternCost,
+                env,
+                img
+            );
+        }
     }
 
     private static Identifier getId(PatternShapeMatch psm) {

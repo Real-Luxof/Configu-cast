@@ -1,5 +1,7 @@
 package com.luxof.configucast;
 
+import com.luxof.configucast.advancements.ConfigucastAdvancementTriggers;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 
@@ -17,6 +19,8 @@ public class Configucast implements ModInitializer {
 	public void onInitialize() {
 
 		LOGGER.info("Hello Fabric world!");
+
+		ConfigucastAdvancementTriggers.register();
 
 		ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(
 			new ConfigucastDatapackLoader()
