@@ -25,7 +25,17 @@ public class MethInterpreter {
         CastingEnvironment env,
         CastingImage image
     ) {
-        var result = simplify(formula, originalAmount, env, image);
+        return simplifyToNum(formula, originalAmount, env, image, Map.of());
+    }
+
+    public static long simplifyToNum(
+        List<EquationPart> formula,
+        long originalAmount,
+        CastingEnvironment env,
+        CastingImage image,
+        Map<String, Object> variables
+    ) {
+        var result = simplify(formula, originalAmount, env, image, variables);
         if (result.size() > 1 || !(result.get(0) instanceof NumberEP nep))
             throw new MathException("Desired one number term, equation returned multiple terms or a non-number result upon simplification.");
         return (long)(nep.value * 10000);
@@ -216,8 +226,8 @@ public class MethInterpreter {
             13, 14,
             (curr, op, seco) -> new NumberEP(
                 op == OperatorEP.EQ
-                    ? curr.getValue().equals(seco.getValue()) ? 1 : 0
-                    : !curr.getValue().equals(seco.getValue()) ? 1 : 0
+                    ? curr.equals(seco) ? 1 : 0
+                    : !curr.equals(seco) ? 1 : 0
             )
         );
 
