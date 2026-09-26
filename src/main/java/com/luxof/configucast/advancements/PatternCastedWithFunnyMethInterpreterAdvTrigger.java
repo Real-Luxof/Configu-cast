@@ -38,7 +38,7 @@ public class PatternCastedWithFunnyMethInterpreterAdvTrigger extends AbstractCri
     ) {
         return new Conditions(
             playerPredicate,
-            obj.get("pattern_id").getAsString(),
+            obj.has("pattern_id") ? obj.get("pattern_id").getAsString() : "",
             obj.get("funny_meth").getAsString()
         );
     }
