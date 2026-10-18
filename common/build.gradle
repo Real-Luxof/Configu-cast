@@ -1,0 +1,23 @@
+architectury {
+    common rootProject.enabled_platforms.split(',')
+}
+
+dependencies {
+    // We depend on Fabric Loader here to use the Fabric @Environment annotations,
+    // which get remapped to the correct annotations on each platform.
+    // Do NOT use other classes from Fabric Loader.
+    modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+
+    // Architectury API. This is optional, and you can comment it out if you don't need it.
+    modImplementation "dev.architectury:architectury:$rootProject.architectury_api_version"
+
+	compileOnly("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
+	modImplementation("at.petra-k.hexcasting:hexcasting-fabric-$minecraft_version:$hexcasting") {
+		exclude module: "phosphor"
+		exclude module: "lithium"
+		exclude module: "emi"
+	}
+	modImplementation("vazkii.patchouli:Patchouli:$minecraft_version-$patchouli-FABRIC-SNAPSHOT")
+	modImplementation("at.petra-k.paucal:paucal-fabric-$minecraft_version:$paucal")
+	modImplementation("com.samsthenerd.inline:inline-fabric:$minecraft_version-$inline")
+}

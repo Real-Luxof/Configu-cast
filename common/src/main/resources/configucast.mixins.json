@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.luxof.configucast.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "client": [
+  ],
+  "mixins": [
+    "CastingEnvironmentMixin",
+    "CastingVMMixin",
+    "PatternRegistryManifestMixin",
+    "ActionRegistryEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,22 @@
+{
+    "playergates": {
+        "hexcasting:add_motion": "hexcasting:opened_eyes"
+    },
+
+    "playerlessgates": [
+        "hexcasting:break_block"
+    ],
+
+    "costs": {
+        "hexcasting:add_motion": "len($0) / 2 + $userData[\"hexcasting:impulsed\"][$1.uuid] * -0.5",
+        "hexcasting:break_block": "random(5)",
+        "hexcasting:place_block": "sin($caster.pos.x % 1)"
+    },
+
+    "pattern_redirects": {
+        "hexcasting:break_block": {
+            "stroke_order": "wwa",
+            "start_dir": "ne"
+        }
+    }
+}

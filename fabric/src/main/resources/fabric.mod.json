@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "configucast",
+	"version": "${version}",
+	"name": "Configu-cast",
+	"description": "Configure Hex Casting a marginal amount.",
+	"authors": [
+		"Luxof"
+	],
+	"contact": {
+		"sources": "https://github.com/Real-Luxof/configu-cast"
+	},
+	"license": "MIT",
+	"icon": "assets/configucast/icon.png",
+	"environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.luxof.configucast.fabric.ConfigucastFabric"
+    ]
+  },
+  "mixins": [
+    "configucast.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "architectury": ">=9.2.14",
+    "fabric-api": "*",
+    "hexcasting": ">=0.11.4"
+  }
+}
