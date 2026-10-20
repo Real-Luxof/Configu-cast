@@ -22,6 +22,7 @@ import java.util.Set;
 
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
 
 public class ConfigucastDatapackLoader {
 
@@ -36,9 +37,34 @@ public class ConfigucastDatapackLoader {
 
         LOGGER.info("Configuring your casts...");
 
-        manager.findResources(
+        manager.getAllNamespaces().stream()
+            .filter(name ->
+                manager.getResource(new Identifier(name, "configucast.json")).isPresent()
+                && (!name.equals(MOD_ID) || Platform.isDevelopmentEnvironment())
+            )
+            .map(name ->
+                new Pair<>(
+                    name,
+                    manager.getResource(new Identifier(name, "configucast.json")).get()
+                )
+            ).forEach(pair -> {
+                LOGGER.info("Configu-cast loading: " + pair.getLeft().toString());
+                try {
+                    ConfigucastDatapackLoader.load(
+                        JsonParser.parseReader(pair.getRight().getReader()).getAsJsonObject()
+                    );
+                } catch (Exception e) {
+                    LOGGER.error(
+                        "Datapack " + pair.getLeft() + " has an invalid configucast.json.",
+                        e
+                    );
+                }
+            });
+        // why's Forge gotta be a special little flower?
+        /*manager.findResources(
             "",
             path -> {
+            LOGGER.info("NEXT PATH: " + path.toString());
             return path.getPath().equals("configucast.json") &&
                 (
                     !path.getNamespace().equals(MOD_ID) ||
@@ -57,7 +83,7 @@ public class ConfigucastDatapackLoader {
                     e
                 );
             }
-        });
+        });*/
     }
 
     public static void load(JsonObject file) throws Exception {

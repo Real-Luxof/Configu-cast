@@ -1,17 +1,22 @@
 package com.luxof.configucast.forge;
 
-import static com.luxof.configucast.Configucast.LOGGER;
-
 import com.luxof.configucast.Configucast;
+import com.luxof.configucast.ConfigucastDatapackLoader;
+
+import static com.luxof.configucast.Configucast.LOGGER;
 
 import dev.architectury.platform.forge.EventBuses;
 
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.SynchronousResourceReloader;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(Configucast.MOD_ID)
+@EventBusSubscriber
 public final class ConfigucastForge {
     public ConfigucastForge() {
         // Submit our event bus to let Architectury API register our content on the right time.
@@ -23,7 +28,12 @@ public final class ConfigucastForge {
     }
 
     @SubscribeEvent
-    public void onAddReloadListeners(AddReloadListenerEvent event) {
-        event.addListener(new ConfigucastForgeDatapackLoader());
+    public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        event.addListener(new SynchronousResourceReloader() {
+            @Override
+            public void reload(ResourceManager manager) {
+                ConfigucastDatapackLoader.reload(manager);
+            }
+        });
     }
 }
