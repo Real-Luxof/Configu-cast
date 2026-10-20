@@ -12,7 +12,7 @@
 	},
 	"license": "MIT",
 	"icon": "assets/configucast/icon.png",
-	"environment": "server",
+	"environment": "*",
   "entrypoints": {
     "main": [
       "com.luxof.configucast.fabric.ConfigucastFabric"
