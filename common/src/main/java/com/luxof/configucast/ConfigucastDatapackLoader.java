@@ -34,12 +34,11 @@ public class ConfigucastDatapackLoader {
         EquationParser.costFormulae.clear();
         PatternRedirectsStorer.clear();
 
-        LOGGER.info("Configu-cast: loading datapacks!");
+        LOGGER.info("Configuring your casts...");
 
         manager.findResources(
             "",
             path -> {
-            LOGGER.info("Configu-cast: loading datapack: " + path.getNamespace());
             return path.getPath().equals("configucast.json") &&
                 (
                     !path.getNamespace().equals(MOD_ID) ||
@@ -47,6 +46,7 @@ public class ConfigucastDatapackLoader {
                 );
             }
         ).forEach((id, rec) -> {
+            LOGGER.info("Configu-cast loading: " + id.toString());
             try {
                 ConfigucastDatapackLoader.load(
                     JsonParser.parseReader(rec.getReader()).getAsJsonObject()

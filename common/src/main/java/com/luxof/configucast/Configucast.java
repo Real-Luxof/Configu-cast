@@ -19,7 +19,6 @@ public class Configucast {
 
 		ConfigucastAdvancementTriggers.register();
 		LifecycleEvent.SERVER_STARTING.register(server -> {
-			LOGGER.info("Startin' 'er right up!");
 			PatternRedirectsStorer.isInEffectForCursedMixins = true;
 		});
 		LifecycleEvent.SERVER_STOPPING.register(server -> {

@@ -1,5 +1,7 @@
 package com.luxof.configucast.forge;
 
+import static com.luxof.configucast.Configucast.LOGGER;
+
 import com.luxof.configucast.Configucast;
 
 import dev.architectury.platform.forge.EventBuses;
@@ -17,6 +19,7 @@ public final class ConfigucastForge {
 
         // Run our common setup.
         Configucast.init();
+        LOGGER.info("--Broadcasting from a Forge near you.");
     }
 
     @SubscribeEvent
