@@ -36,7 +36,6 @@ public class PatternRegistryManifestMixin {
         boolean cFASO,
         CallbackInfoReturnable<PatternShapeMatch> cir
     ) {
-        LOGGER.info("Hello!");
         PatternShapeMatch psm = cir.getReturnValue();
 
         if (
@@ -45,15 +44,11 @@ public class PatternRegistryManifestMixin {
             getFrom(psm) == null
         ) {
             Identifier actionId = idOf(psm);
-            if (actionId != null && PatternRedirectsStorer.hasRedirect(actionId)) {
-                LOGGER.info("Hooh!");
+            if (actionId != null && PatternRedirectsStorer.hasRedirect(actionId))
                 cir.setReturnValue(new PatternShapeMatch.Nothing());
-            }
-            LOGGER.info("Haah!");
             return;
         }
 
-        LOGGER.info("Wow!");
         Identifier redirectedAction = PatternRedirectsStorer.get(pattern.anglesSignature());
         Registry<ActionRegistryEntry> reg = IXplatAbstractions.INSTANCE.getActionRegistry();
         RegistryKey<ActionRegistryEntry> regKey = reg.getKey(reg.get(redirectedAction)).get();
