@@ -43,6 +43,8 @@ public class ScrungledPatternsSaveMixin {
         RegistryKey<ActionRegistryEntry> registryKey = pwEntry.key();
         HexPattern actualPattern = PatternRedirectsStorer.get(registryKey.getValue());
 
+        if (actualPattern == null) return;
+
         if (
             APieceOfLapisworks.matchShape(
                 actualPattern,
@@ -51,11 +53,14 @@ public class ScrungledPatternsSaveMixin {
         ) return;
         long seed = runningServer.getOverworld().getSeed();
 
-        String newSignature = EulerPathFinder.findAltDrawing(actualPattern, seed).anglesSignature();
+        HexPattern newPattern = EulerPathFinder.findAltDrawing(actualPattern, seed);
 
         lookup.remove(signature);
-        lookup.put(newSignature, new PerWorldEntry(registryKey, actualPattern.getStartDir()));
-        reverseLookup.put(registryKey, newSignature);
+        lookup.put(
+            newPattern.anglesSignature(),
+            new PerWorldEntry(registryKey, newPattern.getStartDir())
+        );
+        reverseLookup.put(registryKey, newPattern.anglesSignature());
     }
 
     @Inject(
