@@ -23,7 +23,7 @@ public final class ConfigucastFabric implements ModInitializer {
 
         // Run our common setup.
         Configucast.init();
-        LOGGER.info("Broadcasting to you from a Fabric near you.");
+        LOGGER.info("--Broadcasting from a Fabric near you.");
         
         ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(
             new SimpleSynchronousResourceReloadListener() {

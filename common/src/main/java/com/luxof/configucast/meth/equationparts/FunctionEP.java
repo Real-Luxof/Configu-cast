@@ -2,9 +2,14 @@ package com.luxof.configucast.meth.equationparts;
 
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.IotaType;
+import at.petrak.hexcasting.api.casting.iota.NullIota;
 
 import com.luxof.configucast.meth.MathException;
+
+import static com.luxof.configucast.Configucast.prepareVariables;
+import static com.luxof.configucast.Configucast.runningServer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,9 +19,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 public final class FunctionEP implements EquationPart {
     public String function;
@@ -74,7 +81,9 @@ public final class FunctionEP implements EquationPart {
         Map.entry("vec", new Pair<>(3, 4)),
         Map.entry("iota", new Pair<>(1, 2)),
 
-        Map.entry("loop", new Pair<>(5, 6))
+        Map.entry("loop", new Pair<>(5, 6)),
+        Map.entry("sum", new Pair<>(2, 3)),
+        Map.entry("prod", new Pair<>(2, 3))
     );
 
     public static EquationPart computeFunction(
@@ -84,68 +93,85 @@ public final class FunctionEP implements EquationPart {
         CastingEnvironment env,
         CastingImage img
     ) {
+        Map<String, Object> variables = new HashMap<>();
+        prepareVariables(originalAmount, env, img, variables);
+        return computeFunction(fn, args, variables);
+    }
+
+    public static EquationPart computeFunction(
+        String fn,
+        List<CommaNEP> args,
+        Map<String, Object> variables
+    ) {
         Object data = switch (fn) {
-            case "neg" -> ~((long)args.get(0).getNum(fn, originalAmount, env, img));
-            case "floor" -> Math.floor(args.get(0).getNum(fn, originalAmount, env, img));
-            case "ceil" -> Math.ceil(args.get(0).getNum(fn, originalAmount, env, img));
-            case "round" -> Math.round(args.get(0).getNum(fn, originalAmount, env, img));
-            case "max" -> args.stream().map(a -> a.getNum(fn, originalAmount, env, img)).reduce(Math::max);
-            case "min" -> args.stream().map(a -> a.getNum(fn, originalAmount, env, img)).reduce(Math::min);
-            case "log" -> Math.log(args.get(0).getNum(fn, originalAmount, env, img)) / Math.log(args.get(1).getNum(fn, originalAmount, env, img));
-            case "sqrt" -> Math.sqrt(args.get(0).getNum(fn, originalAmount, env, img));
-            case "abs" -> Math.abs(args.get(0).getNum(fn, originalAmount, env, img));
-            case "signum" -> Math.signum(args.get(0).getNum(fn, originalAmount, env, img));
-            case "degrees" -> Math.toDegrees(args.get(0).getNum(fn, originalAmount, env, img));
-            case "radians" -> Math.toRadians(args.get(0).getNum(fn, originalAmount, env, img));
-            case "root" -> Math.pow(args.get(0).getNum(fn, originalAmount, env, img), 1.0 / args.get(1).getNum(fn, originalAmount, env, img));
+            case "neg" -> ~((long)args.get(0).getNum(fn, variables));
+            case "floor" -> Math.floor(args.get(0).getNum(fn, variables));
+            case "ceil" -> Math.ceil(args.get(0).getNum(fn, variables));
+            case "round" -> Math.round(args.get(0).getNum(fn, variables));
+            case "max" -> args.stream().map(a -> a.getNum(fn, variables)).reduce(Math::max);
+            case "min" -> args.stream().map(a -> a.getNum(fn, variables)).reduce(Math::min);
+            case "log" -> Math.log(args.get(0).getNum(fn, variables)) / Math.log(args.get(1).getNum(fn, variables));
+            case "sqrt" -> Math.sqrt(args.get(0).getNum(fn, variables));
+            case "abs" -> Math.abs(args.get(0).getNum(fn, variables));
+            case "signum" -> Math.signum(args.get(0).getNum(fn, variables));
+            case "degrees" -> Math.toDegrees(args.get(0).getNum(fn, variables));
+            case "radians" -> Math.toRadians(args.get(0).getNum(fn, variables));
+            case "root" -> Math.pow(args.get(0).getNum(fn, variables), 1.0 / args.get(1).getNum(fn, variables));
             case "random" -> Math.random();
 
-            case "sin" -> Math.sin(args.get(0).getNum(fn, originalAmount, env, img));
-            case "sinh" -> Math.sinh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arcsin" -> Math.asin(args.get(0).getNum(fn, originalAmount, env, img));
-            case "cos" -> Math.cos(args.get(0).getNum(fn, originalAmount, env, img));
-            case "cosh" -> Math.cosh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arccos" -> Math.acos(args.get(0).getNum(fn, originalAmount, env, img));
-            case "tan" -> Math.tan(args.get(0).getNum(fn, originalAmount, env, img));
-            case "tanh" -> Math.tanh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arctan" -> Math.atan(args.get(0).getNum(fn, originalAmount, env, img));
-            case "atan2" -> Math.atan2(args.get(0).getNum(fn, originalAmount, env, img), args.get(1).getNum(fn, originalAmount, env, img));
-            case "csc" -> 1.0 / Math.sin(args.get(0).getNum(fn, originalAmount, env, img));
-            case "csch" -> 1.0 / Math.sinh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arccsc" -> 1.0 / Math.asin(args.get(0).getNum(fn, originalAmount, env, img));
-            case "sec" -> 1.0 / Math.cos(args.get(0).getNum(fn, originalAmount, env, img));
-            case "sech" -> 1.0 / Math.cosh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arcsec" -> 1.0 / Math.acos(args.get(0).getNum(fn, originalAmount, env, img));
-            case "cot" -> 1.0 / Math.tan(args.get(0).getNum(fn, originalAmount, env, img));
-            case "coth" -> 1.0 / Math.tanh(args.get(0).getNum(fn, originalAmount, env, img));
-            case "arccot" -> 1.0 / Math.atan(args.get(0).getNum(fn, originalAmount, env, img));
+            case "sin" -> Math.sin(args.get(0).getNum(fn, variables));
+            case "sinh" -> Math.sinh(args.get(0).getNum(fn, variables));
+            case "arcsin" -> Math.asin(args.get(0).getNum(fn, variables));
+            case "cos" -> Math.cos(args.get(0).getNum(fn, variables));
+            case "cosh" -> Math.cosh(args.get(0).getNum(fn, variables));
+            case "arccos" -> Math.acos(args.get(0).getNum(fn, variables));
+            case "tan" -> Math.tan(args.get(0).getNum(fn, variables));
+            case "tanh" -> Math.tanh(args.get(0).getNum(fn, variables));
+            case "arctan" -> Math.atan(args.get(0).getNum(fn, variables));
+            case "atan2" -> Math.atan2(args.get(0).getNum(fn, variables), args.get(1).getNum(fn, variables));
+            case "csc" -> 1.0 / Math.sin(args.get(0).getNum(fn, variables));
+            case "csch" -> 1.0 / Math.sinh(args.get(0).getNum(fn, variables));
+            case "arccsc" -> 1.0 / Math.asin(args.get(0).getNum(fn, variables));
+            case "sec" -> 1.0 / Math.cos(args.get(0).getNum(fn, variables));
+            case "sech" -> 1.0 / Math.cosh(args.get(0).getNum(fn, variables));
+            case "arcsec" -> 1.0 / Math.acos(args.get(0).getNum(fn, variables));
+            case "cot" -> 1.0 / Math.tan(args.get(0).getNum(fn, variables));
+            case "coth" -> 1.0 / Math.tanh(args.get(0).getNum(fn, variables));
+            case "arccot" -> 1.0 / Math.atan(args.get(0).getNum(fn, variables));
 
-            case "len" -> args.get(0).getVec(fn, originalAmount, env, img).length();
-            case "lenSqr" -> args.get(0).getVec(fn, originalAmount, env, img).lengthSquared();
-            case "axial" -> Vec3d.of(getFacing(args.get(0).getVec(fn, originalAmount, env, img)).getVector());
-            case "hadamard" -> args.get(0).getVec(fn, originalAmount, env, img).multiply(args.get(1).getVec(fn, originalAmount, env, img));
+            case "len" -> args.get(0).getVec(fn, variables).length();
+            case "lenSqr" -> args.get(0).getVec(fn, variables).lengthSquared();
+            case "axial" -> Vec3d.of(getFacing(args.get(0).getVec(fn, variables)).getVector());
+            case "hadamard" -> args.get(0).getVec(fn, variables).multiply(args.get(1).getVec(fn, variables));
 
-            case "num" -> getDoubleOutOf(args.get(0).getStr(fn, originalAmount, env, img));
-            case "str" -> args.get(0).get(fn, originalAmount, env, img).getValue().toString();
+            case "num" -> getDoubleOutOf(args.get(0).getStr(fn, variables));
+            case "str" -> args.get(0).get(fn, variables).getValue().toString();
             case "vec" -> new Vec3d(
-                args.get(0).getNum(fn, originalAmount, env, img),
-                args.get(1).getNum(fn, originalAmount, env, img),
-                args.get(2).getNum(fn, originalAmount, env, img)
+                args.get(0).getNum(fn, variables),
+                args.get(1).getNum(fn, variables),
+                args.get(2).getNum(fn, variables)
             );
-            case "iota" -> VariableEP.deIotaThisIotaIfPossible(IotaType.deserialize(
-                args.get(0).getNBT(fn, originalAmount, env, img),
-                env.getWorld()
+            case "iota" -> VariableEP.deIotaThisIotaIfPossible(deserializeIotaNbt(
+                args.get(0).getNBT(fn, variables)
             ));
 
             case "loop" -> loopFn(
-                args.get(0).get(fn, originalAmount, env, img),
+                args.get(0).get(fn, variables),
                 args.get(1),
                 args.get(2),
                 args.get(3),
                 args.get(4),
-                originalAmount,
-                env,
-                img
+                variables
+            );
+            case "sum" -> sumFn(
+                args.get(0),
+                args.get(1),
+                variables
+            );
+            case "prod" -> prodFn(
+                args.get(0),
+                args.get(1),
+                variables
             );
 
             default -> throw new MathException("Oops! Big fucky wucky, a wittle fucko boingo. Function doesn't exist! Contact Luxof: " + fn);
@@ -174,28 +200,46 @@ public final class FunctionEP implements EquationPart {
             throw new MathException("Error interpreting math equation in function processing: \"num\" requires a string that may be a valid number, but was provided \"" + str + "\"!");
         }
     }
+
+    private static Iota deserializeIotaNbt(
+        NbtCompound nbt
+    ) {
+        if (runningServer == null)
+            throw new MathException("Error interpreting math equation in function processing: \"iota\" function requires being ran while a server is active. Hi mod dev!");
+
+        // couldn't be arsed, i'll just pull the server from a global
+        for (RegistryKey<World> worldKey : runningServer.getWorldRegistryKeys()) {
+            Iota iota = IotaType.deserialize(nbt, runningServer.getWorld(worldKey));
+            if (!(iota instanceof NullIota)) return iota;
+        }
+        return new NullIota();
+    }
+
+
     private static EquationPart loopFn(
         EquationPart first,
         CommaNEP predicate,
         CommaNEP step,
         CommaNEP mapper,
         CommaNEP reducer,
-        long og,
-        CastingEnvironment env,
-        CastingImage img
+        Map<String, Object> outerVariables
     ) {
         EquationPart i = first;
         int iCap = 1 + recursivelySearchEquationAndFindHowManyArgsAreUsed(mapper.nested, "$i");
         int oCap = 1 + recursivelySearchEquationAndFindHowManyArgsAreUsed(mapper.nested, "$o");
         EquationPart o = null;
-        Map<String, Object> variables = new HashMap<>(Map.of("i0", i, "iterCount", 0));
+
+        Map<String, Object> variables = new HashMap<>(outerVariables);
+        variables.put("i0", i);
+        variables.put("iterCount", 0);
+
         List<EquationPart> allOs = new ArrayList<>(10); // i don't reckon many will do more than 10
         for (
             ;
-            Math.abs(predicate.getNum("loop", og, env, img, variables)) > 0.0001;
-            i = stepMap(variables, step.get("loop", og, env, img, variables), o, iCap, oCap)
+            Math.abs(predicate.getNum("loop", variables)) > 0.0001;
+            i = stepMap(variables, step.get("loop", variables), o, iCap, oCap)
         ) {
-            o = mapper.get("loop", og, env, img, variables);
+            o = mapper.get("loop", variables);
             allOs.add(o);
         }
 
@@ -219,7 +263,7 @@ public final class FunctionEP implements EquationPart {
             ) {
                 variables.put("arg" + String.valueOf(windowIndex), allOs.get(windowIndex));
             }
-            accumulator = reducer.get("loop", og, env, img, variables);
+            accumulator = reducer.get("loop", variables);
         }
 
         return accumulator;
@@ -284,5 +328,39 @@ public final class FunctionEP implements EquationPart {
         map.put("i0", currI);
         map.put("o0", currO);
         return currI;
+    }
+
+    private static EquationPart sumFn(
+        CommaNEP condition,
+        CommaNEP selector,
+        Map<String, Object> variables
+    ) {
+        double sum = 0.0;
+        for (
+            int i = 0;
+            Math.abs(condition.getNum("sum", variables)) > 0.0001;
+            i++
+        ) {
+            variables.put("i", i);
+            sum += selector.getNum("sum", variables);
+        }
+        return new NumberEP(sum);
+    }
+
+    private static EquationPart prodFn(
+        CommaNEP condition,
+        CommaNEP selector,
+        Map<String, Object> variables
+    ) {
+        double prod = 0.0;
+        for (
+            int i = 0;
+            Math.abs(condition.getNum("prod", variables)) > 0.0001;
+            i++
+        ) {
+            variables.put("i", i);
+            prod *= selector.getNum("prod", variables);
+        }
+        return new NumberEP(prod);
     }
 }

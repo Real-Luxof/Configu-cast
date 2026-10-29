@@ -5,7 +5,10 @@ import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
 
 import com.luxof.configucast.meth.equationparts.*;
 
+import static com.luxof.configucast.Configucast.prepareVariables;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -25,7 +28,7 @@ public class MethInterpreter {
         CastingEnvironment env,
         CastingImage image
     ) {
-        return simplifyToNum(formula, originalAmount, env, image, Map.of());
+        return simplifyToNum(formula, originalAmount, env, image, new HashMap<>());
     }
 
     public static long simplifyToNum(
@@ -47,7 +50,7 @@ public class MethInterpreter {
         CastingEnvironment env,
         CastingImage image
     ) {
-        return simplify(formula, originalAmount, env, image, Map.of());
+        return simplify(formula, originalAmount, env, image, new HashMap<>());
     }
 
     public static List<EquationPart> simplify(
@@ -55,6 +58,17 @@ public class MethInterpreter {
         long originalAmount,
         CastingEnvironment env,
         CastingImage image,
+        Map<String, Object> variables
+    ) {
+        prepareVariables(originalAmount, env, image, variables);
+        return simplify(
+            formula,
+            variables
+        );
+    }
+
+    public static List<EquationPart> simplify(
+        List<EquationPart> formula,
         Map<String, Object> variables
     ) {
         // i will make "5 (random() < 0.5 ? + : -) 2" into valid syntax
@@ -70,9 +84,7 @@ public class MethInterpreter {
                     EquationPart ret = FunctionEP.computeFunction(
                         ((FunctionEP)fnArgs.remove(0).nested.get(0)).function,
                         fnArgs,
-                        originalAmount,
-                        env,
-                        image
+                        variables
                     );
                     fnArgs.clear();
                     return Stream.of(ret);
@@ -83,12 +95,12 @@ public class MethInterpreter {
                 return ep instanceof NestedEP nep
                     ? Stream.of(
                         ep instanceof SquareBracketNEP
-                            ? new EquationPart[] { new SquareBracketNEP(simplify(nep.nested, originalAmount, env, image)) }
-                            : simplify(nep.nested, originalAmount, env, image, variables).toArray(new EquationPart[0])
+                            ? new EquationPart[] { new SquareBracketNEP(simplify(nep.nested, variables)) }
+                            : simplify(nep.nested, variables).toArray(new EquationPart[0])
                     )
                     : Stream.of(
                         ep instanceof VariableEP vep
-                            ? VariableEP.dereferenceVariable(vep, originalAmount, env, image, variables)
+                            ? VariableEP.dereferenceVariable(vep, variables)
                             : ep
                     );
             })

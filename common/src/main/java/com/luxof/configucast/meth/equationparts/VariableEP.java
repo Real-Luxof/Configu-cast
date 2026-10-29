@@ -10,8 +10,11 @@ import at.petrak.hexcasting.api.casting.iota.ListIota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 
+import static com.luxof.configucast.Configucast.prepareVariables;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -39,7 +42,7 @@ public final class VariableEP implements EquationPart {
         CastingEnvironment env,
         CastingImage img
     ) {
-        return dereferenceVariable(vep, originalAmount, env, img, Map.of());
+        return dereferenceVariable(vep, originalAmount, env, img, new HashMap<>());
     }
 
     public static EquationPart dereferenceVariable(
@@ -49,30 +52,22 @@ public final class VariableEP implements EquationPart {
         CastingImage img,
         Map<String, Object> variables
     ) {
+        prepareVariables(originalAmount, env, img, variables);
+        return dereferenceVariable(vep, variables);
+    }
+
+    public static EquationPart dereferenceVariable(
+        VariableEP vep,
+        Map<String, Object> variables
+    ) {
         // initialData... like, INITIAL-D, THE ARCADE GAMES?!?!?!??!?!?!?!?!
         Object data;
         String first = vep.variable[0];
-        try {
-            List<Iota> stack = img.getStack();
-            data = stack.get(stack.size() - 1 - Integer.parseInt(first));
-        } catch (NumberFormatException e) {
-            data = variables.containsKey(first) ? variables.get(first) : switch (first) {
-                case "originalAmount" -> (double)originalAmount / 10000.0;
-                case "casterExists" -> env.getCastingEntity() != null ? 1.0 : 0.0;
-                case "caster" -> env.getCastingEntity();
-                case "mishapSprayPos" -> env.mishapSprayPos();
-                case "enlightened" -> env.isEnlightened() ? 1.0 : 0.0;
-                case "totalMedia" -> (Long.MAX_VALUE - env.extractMedia(Long.MAX_VALUE, true)) / 10000.0;
-                case "castingHand" -> env.getCastingHand().ordinal();
-                case "otherHand" -> env.getOtherHand().ordinal();
-                case "parenCount" -> img.getParenCount();
-                case "parenthesized" -> img.getParenthesized();
-                // unrequired, i think
-                //case "escapeNext" -> img.getEscapeNext() ? 1.0 : 0.0;
-                case "userData" -> img.getUserData();
-                default -> throw new MathException("Failed to interpret math equation due to unknown variable: \"" + first + "\"");
-            };
-        }
+        if (!variables.containsKey(first))
+            throw new MathException(
+                "Failed to interpret math equation due to unknown variable: \"" + first + "\""
+            );
+        data = variables.get(first);
 
         for (String attribute : vep.variable) {
             if (attribute == first) continue;
@@ -143,15 +138,14 @@ public final class VariableEP implements EquationPart {
                     if (attribute.startsWith("$")) {
                         EquationPart varValue = dereferenceVariable(
                             new VariableEP(attribute),
-                            originalAmount,
-                            env,
-                            img
+                            variables
                         );
                         if (varValue instanceof NumberEP num && isInteger(num.value)) index = (int)Math.floor(num.value);
                         else throw new MathException(String.format("Failed to interpret math equation in variable-accessing: mini variable-access for a list may NOT return anything but an integer."));
 
                     } else index = Integer.parseInt(attribute);
 
+                    // TODO: why the fuck was a "TODO: document this" not attached to this?
                     // to support modulus without actually supporting modulus, i loop around
                     data = list.get(index % list.size());
 

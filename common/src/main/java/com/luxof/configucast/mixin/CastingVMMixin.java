@@ -35,7 +35,7 @@ public abstract class CastingVMMixin {
     public abstract CastingImage getImage();
     @Shadow
     public abstract CastingEnvironment getEnv();
-    
+
     @ModifyVariable(
         method = "queueExecuteAndWrapIotas",
         at = @At(
