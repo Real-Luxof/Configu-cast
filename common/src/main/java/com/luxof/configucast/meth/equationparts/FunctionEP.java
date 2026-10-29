@@ -79,6 +79,7 @@ public final class FunctionEP implements EquationPart {
         Map.entry("num", new Pair<>(1, 2)),
         Map.entry("str", new Pair<>(1, 2)),
         Map.entry("vec", new Pair<>(3, 4)),
+        Map.entry("nbt", new Pair<>(2, 999)),
         Map.entry("iota", new Pair<>(1, 2)),
 
         Map.entry("loop", new Pair<>(5, 6)),
@@ -151,6 +152,7 @@ public final class FunctionEP implements EquationPart {
                 args.get(1).getNum(fn, variables),
                 args.get(2).getNum(fn, variables)
             );
+            case "nbt" -> nbtFn(args, variables);
             case "iota" -> VariableEP.deIotaThisIotaIfPossible(deserializeIotaNbt(
                 args.get(0).getNBT(fn, variables)
             ));
@@ -199,6 +201,39 @@ public final class FunctionEP implements EquationPart {
         } catch (NumberFormatException e) {
             throw new MathException("Error interpreting math equation in function processing: \"num\" requires a string that may be a valid number, but was provided \"" + str + "\"!");
         }
+    }
+
+    private static NbtCompound nbtFn(
+        List<CommaNEP> args,
+        Map<String, Object> variables
+    ) {
+        NbtCompound nbt = new NbtCompound();
+
+        if (args.size() % 2 == 1)
+            throw new MathException("Error interpreting math equation in function processing: \"nbt\" function requires an even number of arguments.");
+        for (int i = 0; i < args.size(); i += 2) {
+            String key = args.get(i).getStr("nbt", variables);
+            EquationPart value = args.get(i + 1).get("nbt", variables);
+
+            if (value instanceof NumberEP numEp)
+                nbt.putDouble(key, numEp.value);
+
+            else if (value instanceof VecEP vecEp) {
+                Vec3d vector = vecEp.value;
+                NbtCompound vectorNbt = new NbtCompound();
+                vectorNbt.putDouble("x", vector.x);
+                vectorNbt.putDouble("y", vector.y);
+                vectorNbt.putDouble("z", vector.z);
+                nbt.put(key, vectorNbt);
+
+            } else if (value instanceof StringEP strEp)
+                nbt.putString(key, strEp.value);
+
+            else if (value instanceof NBTEP nbtEp)
+                nbt.put(key, nbtEp.nbt);
+        }
+
+        return nbt;
     }
 
     private static Iota deserializeIotaNbt(

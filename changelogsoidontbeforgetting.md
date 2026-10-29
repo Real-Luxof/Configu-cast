@@ -3,6 +3,7 @@
 - you can change pattern stroke orders as well!
     - due to how hex code works, this is not compatible with special handlers like Numerical Reflection and Bookkeeper's Gambit. Things such as those would have to be implemented on a per-pattern basis which is pretty tiring.
 # 1.3.0
+- `nbt` function
 - `iterate` function
 - `Enchantment` type
 - `opsConsumed` variable
