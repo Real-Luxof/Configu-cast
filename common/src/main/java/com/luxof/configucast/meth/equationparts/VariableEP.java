@@ -180,7 +180,7 @@ public final class VariableEP implements EquationPart {
                     case "isEnchantable" -> itemStack.isEnchantable();
                     case "isFood" -> itemStack.isFood();
                     case "isStackable" -> itemStack.isStackable();
-                    case "enchantments" -> EnchantmentHelper.get(itemStack);
+                    case "enchantments" -> new Enchantments(EnchantmentHelper.get(itemStack));
                     default -> throw new MathException("Failed to interpret math equation in variable-accessing: item stacks have no attribute named \"" + attribute + "\".");
                 };
             }
