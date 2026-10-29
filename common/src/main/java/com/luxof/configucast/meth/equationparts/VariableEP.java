@@ -10,6 +10,8 @@ import at.petrak.hexcasting.api.casting.iota.ListIota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 
+import com.luxof.configucast.meth.MathException;
+
 import static com.luxof.configucast.Configucast.prepareVariables;
 
 import java.util.ArrayList;
@@ -19,16 +21,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import com.luxof.configucast.meth.MathException;
+import org.jetbrains.annotations.Nullable;
 
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
 public final class VariableEP implements EquationPart {
+
+    /** small internal class because <code>Map</code>s are generic at runtime */
+    private static record Enchantments(Map<Enchantment, Integer> enchantments) {}
+
     public String[] variable;
     public VariableEP(String variable) {
         this.variable = variable.substring(1).split(Pattern.quote("."));
@@ -69,13 +79,18 @@ public final class VariableEP implements EquationPart {
             );
         data = variables.get(first);
 
-        for (String attribute : vep.variable) {
-            if (attribute == first) continue;
+        for (int i = 1; i < vep.variable.length; i++) {
+            Object field = vep.variable[i].startsWith("first")
+                ? deEpThisEpIfPossible(dereferenceVariable(new VariableEP(vep.variable[i]), variables))
+                : vep.variable[i];
 
             data = deIotaThisIotaIfPossible(data);
 
 
-            if (data instanceof LivingEntity living)
+            if (data instanceof LivingEntity living) {
+                if (!(field instanceof String attribute))
+                    throw new MathException("Failed to interpret math equation in variable-accessing: entities have only string attributes.");
+
                 data = switch (attribute) {
                     case "width" -> living.getWidth();
                     case "height" -> living.getHeight();
@@ -121,8 +136,12 @@ public final class VariableEP implements EquationPart {
                     case "isWet" -> living.isWet();
                     default -> throw new MathException("Failed to interpret math equation in variable-accessing: entities have no attribute named \"" + attribute + "\".");
                 };
+            }
 
-            else if (data instanceof Vec3d vec)
+            else if (data instanceof Vec3d vec) {
+                if (!(field instanceof String attribute))
+                    throw new MathException("Failed to interpret math equation in variable-accessing: vectors have only string attributes.");
+
                 data = switch (attribute) {
                     case "x" -> vec.x;
                     case "y" -> vec.y;
@@ -131,30 +150,23 @@ public final class VariableEP implements EquationPart {
                     case "negate" -> vec.negate();
                     default -> throw new MathException("Failed to interpret math equation in variable-accessing: vectors have no attribute named \"" + attribute + "\".");
                 };
+            }
 
             else if (data instanceof List<?> list) {
-                try {
-                    int index;
-                    if (attribute.startsWith("$")) {
-                        EquationPart varValue = dereferenceVariable(
-                            new VariableEP(attribute),
-                            variables
-                        );
-                        if (varValue instanceof NumberEP num && isInteger(num.value)) index = (int)Math.floor(num.value);
-                        else throw new MathException(String.format("Failed to interpret math equation in variable-accessing: mini variable-access for a list may NOT return anything but an integer."));
-
-                    } else index = Integer.parseInt(attribute);
-
-                    // TODO: why the fuck was a "TODO: document this" not attached to this?
-                    // to support modulus without actually supporting modulus, i loop around
+                if (field instanceof Integer index)
                     data = list.get(index % list.size());
 
-                } catch (NumberFormatException e) {
+                else if (field instanceof String attribute) {
                     if (attribute.equals("size")) data = list.size();
-                    else throw new MathException("Failed to interpret math equation in variable-accessing: lists have no attribute named \"" + attribute + "\".");
-                }
+                    throw new MathException("Failed to interpret math equation in variable-accessing: lists have no attribute named \"" + attribute + "\".");
 
-            } else if (data instanceof ItemStack itemStack)
+                } else
+                    throw new MathException("Failed to interpret math equation in variable-accessing: lists have only string and integer attributes.");
+
+            } else if (data instanceof ItemStack itemStack) {
+                if (!(field instanceof String attribute))
+                    throw new MathException("Failed to interpret math equation in variable-accessing: item stacks have only string attributes.");
+
                 data = switch (attribute) {
                     case "item" -> itemStack.getItem().getName().toString();
                     case "count" -> itemStack.getCount();
@@ -170,10 +182,15 @@ public final class VariableEP implements EquationPart {
                     case "isEnchantable" -> itemStack.isEnchantable();
                     case "isFood" -> itemStack.isFood();
                     case "isStackable" -> itemStack.isStackable();
+                    case "enchantments" -> EnchantmentHelper.get(itemStack);
                     default -> throw new MathException("Failed to interpret math equation in variable-accessing: item stacks have no attribute named \"" + attribute + "\".");
                 };
+            }
 
-            else if (data instanceof StatusEffectInstance statusEffect)
+            else if (data instanceof StatusEffectInstance statusEffect) {
+                if (!(field instanceof String attribute))
+                    throw new MathException("Failed to interpret math equation in variable-accessing: status effects have only string attributes.");
+
                 data = switch (attribute) {
                     case "duration" -> statusEffect.getDuration();
                     case "level" -> statusEffect.getAmplifier();
@@ -183,9 +200,20 @@ public final class VariableEP implements EquationPart {
                     case "showParticles" -> statusEffect.shouldShowParticles();
                     default -> throw new MathException("Failed to interpret math equation in variable-accessing: status effects have no attribute named \"" + attribute + "\".");
                 };
+            }
+
+            else if (data instanceof Enchantments enchantments) {
+                if (!(field instanceof String attribute))
+                    throw new MathException("Failed to interpret math equation in variable-accessing: enchantment maps have only string attributes.");
+
+                data = enchantments.enchantments().getOrDefault(
+                    Registries.ENCHANTMENT.get(new Identifier(attribute)),
+                    0
+                );
+            }
 
             else
-                throw new MathException("Failed to interpret math equation in variable-accessing: this data type has no attributes to access, so you may not access \"" + attribute + "\" within it.");
+                throw new MathException("Failed to interpret math equation in variable-accessing: this data type has no attributes to access.");
         }
 
         data = deIotaThisIotaIfPossible(data);
@@ -201,6 +229,16 @@ public final class VariableEP implements EquationPart {
             : new MathException("Oops! Big fucky wucky, a wittle fucko boingo. Contact Luxof: " + data.getClass().toString());
         if (data instanceof RuntimeException e) throw e;
         return (EquationPart)data;
+    }
+    /** reverts <code>dereferenceVariable</code>'s last step, lol.
+     * throws it back if unsuccessful (master word choice) */
+    @Nullable
+    public static Object deEpThisEpIfPossible(EquationPart ep) {
+        return ep instanceof NumberEP numEp ? numEp
+            : ep instanceof VecEP vecEp ? vecEp
+            : ep instanceof NBTEP nbtEp ? nbtEp
+            : ep instanceof StringEP strEp ? strEp
+            : ep;
     }
     /** Turns an Iota or EquationPart into its underlying value. */
     public static Object deIotaThisIotaIfPossible(Object data) {
@@ -232,9 +270,5 @@ public final class VariableEP implements EquationPart {
             armor[i] = living.getEquippedStack(armorSlots[i]);
         }
         return List.of(armor);
-    }
-
-    private static boolean isInteger(double num) {
-        return Math.abs(num - Math.floor(num)) < 0.0001;
     }
 }
