@@ -5,17 +5,20 @@ import at.petrak.hexcasting.api.casting.math.EulerPathFinder;
 import at.petrak.hexcasting.api.casting.math.HexPattern;
 import at.petrak.hexcasting.server.ScrungledPatternsSave;
 import at.petrak.hexcasting.server.ScrungledPatternsSave.PerWorldEntry;
+import at.petrak.hexcasting.xplat.IXplatAbstractions;
 
 import com.luxof.configucast.APieceOfLapisworks;
 import com.luxof.configucast.PatternRedirectsStorer;
 
 import static com.luxof.configucast.Configucast.runningServer;
 
+import java.util.HashSet;
 import java.util.Map;
 
 import kotlin.Pair;
 
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.util.Identifier;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,6 +37,9 @@ public class ScrungledPatternsSaveMixin {
     private Map<RegistryKey<ActionRegistryEntry>, String> reverseLookup;
 
     @Unique
+    private HashSet<Identifier> replacedPatterns = new HashSet<>();
+
+    @Unique
     private void recalcThatPWIfNeeded(
         String signature
     ) {
@@ -43,7 +49,14 @@ public class ScrungledPatternsSaveMixin {
         RegistryKey<ActionRegistryEntry> registryKey = pwEntry.key();
         HexPattern actualPattern = PatternRedirectsStorer.get(registryKey.getValue());
 
-        if (actualPattern == null) return;
+        if (replacedPatterns.contains(registryKey.getValue()) && actualPattern == null) {
+            actualPattern = IXplatAbstractions.INSTANCE.getActionRegistry().get(registryKey)
+                .prototype();
+            replacedPatterns.remove(registryKey.getValue());
+        } else if (actualPattern == null)
+            return;
+        else
+            replacedPatterns.add(registryKey.getValue());
 
         if (
             APieceOfLapisworks.matchShape(

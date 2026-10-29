@@ -17,10 +17,6 @@
         "hexcasting:break_block": {
             "stroke_order": "wwa",
             "start_dir": "ne"
-        },
-        "hexcasting:brainsweep": {
-            "stroke_order": "awawaqaawdd",
-            "start_dir": "e"
         }
     }
 }
