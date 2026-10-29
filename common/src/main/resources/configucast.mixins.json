@@ -9,7 +9,8 @@
     "CastingEnvironmentMixin",
     "CastingVMMixin",
     "PatternRegistryManifestMixin",
-    "ActionRegistryEntryMixin"
+    "ActionRegistryEntryMixin",
+    "ScrungledPatternsSaveMixin"
   ],
   "injectors": {
     "defaultRequire": 1

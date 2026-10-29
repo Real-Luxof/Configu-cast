@@ -9,5 +9,5 @@
 - per world patterns work with Configu-cast pattern renaming now
 - functions didn't use `loop`'s variables inside themselves, for whatever reason
     - also some ABI additions
-    - one change: the variables passed in may override `env`, `image`, etc. (you can override the builtins now basically)
+    - one change: the variables passed in may override `casterExists` etc. (you can override the builtins now basically)
 - `$toplevel.$field` syntax made global instead of being just for lists

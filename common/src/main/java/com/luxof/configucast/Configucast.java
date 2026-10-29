@@ -1,18 +1,18 @@
 package com.luxof.configucast;
 
-import com.luxof.configucast.advancements.ConfigucastAdvancementTriggers;
-
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 
-import dev.architectury.event.events.common.LifecycleEvent;
+import com.luxof.configucast.advancements.ConfigucastAdvancementTriggers;
 
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
+import dev.architectury.event.events.common.LifecycleEvent;
 
 import java.util.List;
 import java.util.Map;
+
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Identifier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
