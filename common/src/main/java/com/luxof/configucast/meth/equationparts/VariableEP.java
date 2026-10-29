@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.jetbrains.annotations.Nullable;
-
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EquipmentSlot;
@@ -81,7 +79,7 @@ public final class VariableEP implements EquationPart {
 
         for (int i = 1; i < vep.variable.length; i++) {
             Object field = vep.variable[i].startsWith("first")
-                ? deEpThisEpIfPossible(dereferenceVariable(new VariableEP(vep.variable[i]), variables))
+                ? dereferenceVariable(new VariableEP(vep.variable[i]), variables).getValue()
                 : vep.variable[i];
 
             data = deIotaThisIotaIfPossible(data);
@@ -229,16 +227,6 @@ public final class VariableEP implements EquationPart {
             : new MathException("Oops! Big fucky wucky, a wittle fucko boingo. Contact Luxof: " + data.getClass().toString());
         if (data instanceof RuntimeException e) throw e;
         return (EquationPart)data;
-    }
-    /** reverts <code>dereferenceVariable</code>'s last step, lol.
-     * throws it back if unsuccessful (master word choice) */
-    @Nullable
-    public static Object deEpThisEpIfPossible(EquationPart ep) {
-        return ep instanceof NumberEP numEp ? numEp
-            : ep instanceof VecEP vecEp ? vecEp
-            : ep instanceof NBTEP nbtEp ? nbtEp
-            : ep instanceof StringEP strEp ? strEp
-            : ep;
     }
     /** Turns an Iota or EquationPart into its underlying value. */
     public static Object deIotaThisIotaIfPossible(Object data) {
